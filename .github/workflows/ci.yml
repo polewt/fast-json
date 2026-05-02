@@ -6,6 +6,15 @@ on:
     tags: ["v*"]
   pull_request:
     branches: [release]
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: "创建 Release (仅在有可用 artifact 时生效)"
+        type: boolean
+        default: false
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
   # -- 测试 (三平台) --
@@ -20,6 +29,23 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+
+      # Linux GUI 系统依赖
+      - name: Install Linux system deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libglib2.0-dev \
+            libgtk-3-dev \
+            libxcb-render0-dev \
+            libxcb-shape0-dev \
+            libxcb-xfixes0-dev \
+            libxkbcommon-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            pkg-config
+
       - run: cargo test --verbose
 
   # -- 构建发布二进制 --
@@ -76,16 +102,45 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      # Linux 32-bit 需要 multilib 链接器
-      - name: Install Linux 32-bit toolchain
+      # Linux 系统依赖 (含 multilib 支持)
+      - name: Install Linux system deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libglib2.0-dev \
+            libgtk-3-dev \
+            libxcb-render0-dev \
+            libxcb-shape0-dev \
+            libxcb-xfixes0-dev \
+            libxkbcommon-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            pkg-config
+
+      # Linux i686: 安装 32 位交叉编译工具链 + i386 系统库
+      - name: Install Linux i686 cross-compile deps
         if: matrix.target == 'i686-unknown-linux-gnu'
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install -y gcc-multilib
+          sudo apt-get install -y \
+            gcc-multilib \
+            libglib2.0-dev:i386 \
+            libgtk-3-dev:i386 \
+            libxcb-render0-dev:i386 \
+            libxcb-shape0-dev:i386 \
+            libxcb-xfixes0-dev:i386 \
+            libxkbcommon-dev:i386 \
+            libssl-dev:i386 \
+            libayatana-appindicator3-dev:i386 \
+            pkg-config:i386
+        continue-on-error: true
 
       - name: Build release
         run: cargo build --release --target ${{ matrix.target }}
+        env:
+          PKG_CONFIG_ALLOW_CROSS: 1
 
       - name: Rename binary (Windows)
         if: runner.os == 'Windows'
@@ -109,7 +164,7 @@ jobs:
   release:
     name: Create Release
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.create_release)
     runs-on: ubuntu-latest
     permissions:
       contents: write
