@@ -76,8 +76,6 @@ impl SyntaxColors {
 
 // -- 布局常量 --
 
-pub const FONT_SIZE_MONO: f32 = 14.0;
-pub const FONT_SIZE_UI: f32 = 13.0;
 pub const PANEL_MIN_WIDTH: f32 = 200.0;
 pub const TOOLBAR_HEIGHT: f32 = 36.0;
 pub const STATUSBAR_HEIGHT: f32 = 24.0;

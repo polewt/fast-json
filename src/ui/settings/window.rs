@@ -11,11 +11,13 @@ pub fn render(app: &mut AppState, ctx: &Context) {
     let mut open = app.settings_open;
     let mut show = true;
 
+    let screen_center = ctx.screen_rect().center();
     Window::new(i18n::tr("settings.title"))
         .open(&mut open)
         .resizable(true)
         .default_width(480.0)
         .default_height(450.0)
+        .default_pos([screen_center.x - 240.0, screen_center.y - 225.0])
         .show(ctx, |ui| {
             // -- 通用 --
             ui.heading(i18n::tr("settings.general"));
@@ -67,6 +69,7 @@ pub fn render(app: &mut AppState, ctx: &Context) {
             // -- 格式化 --
             ui.heading(i18n::tr("settings.format"));
             ui.add(egui::Slider::new(&mut app.config.format.indent, 0..=8).text(i18n::tr("settings.indent")));
+            ui.add(egui::Slider::new(&mut app.config.format.tree_expand_depth, 0..=10).text(i18n::tr("settings.tree_expand_depth")));
             ui.checkbox(&mut app.config.format.sort_keys, i18n::tr("settings.sort_keys"));
             ui.checkbox(&mut app.config.format.trailing_comma, i18n::tr("settings.trailing_comma"));
 

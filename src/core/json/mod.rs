@@ -5,9 +5,11 @@
 
 pub mod formatter;
 pub mod parser;
+pub mod tree;
 pub mod types;
 pub mod validator;
 
 pub use formatter::{format_compact, format_pretty};
 pub use parser::parse;
+pub use tree::build_flat_tree;
 pub use validator::validate;

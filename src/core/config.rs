@@ -73,6 +73,9 @@ pub struct FormatConfig {
     /// 尾随逗号
     #[serde(default)]
     pub trailing_comma: bool,
+    /// 树形视图默认展开级数 (0 = 全部展开)
+    #[serde(default = "default_tree_expand")]
+    pub tree_expand_depth: usize,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -134,6 +137,7 @@ impl Default for FormatConfig {
             indent: default_indent(),
             sort_keys: false,
             trailing_comma: false,
+            tree_expand_depth: default_tree_expand(),
         }
     }
 }
@@ -164,6 +168,7 @@ fn default_true() -> bool { true }
 fn default_font_size() -> f32 { 14.0 }
 fn default_font_family() -> String { "Consolas, monospace".into() }
 fn default_indent() -> usize { 2 }
+fn default_tree_expand() -> usize { 2 }
 
 // -- 配置读写 --
 

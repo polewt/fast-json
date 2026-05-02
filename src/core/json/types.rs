@@ -42,21 +42,24 @@ impl std::fmt::Display for ParseError {
     }
 }
 
-/// JSON 树节点--用于树形视图展示。
+/// 扁平化树节点——用于虚拟滚动渲染。
+///
+/// 与嵌套 `JsonNode` 不同，此结构将整棵树平铺为数组，
+/// 通过 `descendant_count` 实现折叠时跳过子孙节点。
 #[derive(Debug, Clone)]
-pub struct JsonNode {
-    /// 键名 (数组元素为 None)
+pub struct FlatTreeNode {
+    /// 键名 (数组元素为数字索引字符串)
     pub key: Option<String>,
-    /// 值 (字符串表示)
+    /// 值的字符串表示
     pub value: String,
     /// 节点类型
     pub kind: JsonNodeKind,
-    /// 子节点
-    pub children: Vec<JsonNode>,
-    /// 节点深度
+    /// 在树中的深度 (根为 0)
     pub depth: usize,
-    /// 已展开
+    /// 是否已展开
     pub expanded: bool,
+    /// 子孙节点总数 (不含自身)，用于折叠时跳过
+    pub descendant_count: usize,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -67,4 +70,11 @@ pub enum JsonNodeKind {
     Number,
     Boolean,
     Null,
+}
+
+impl JsonNodeKind {
+    /// 是否为容器类型 (可折叠)
+    pub fn is_container(self) -> bool {
+        matches!(self, JsonNodeKind::Object | JsonNodeKind::Array)
+    }
 }

@@ -6,7 +6,7 @@
 use egui::Context;
 use crate::core::config::AppConfig;
 use crate::core::json;
-use crate::core::json::types::FormatOptions;
+use crate::core::json::types::{FlatTreeNode, FormatOptions};
 use crate::app::action::Action;
 use crate::core::clipboard::ClipboardProvider;
 use crate::i18n;
@@ -26,9 +26,21 @@ pub struct AppState {
     pub config: AppConfig,
 
     // -- UI 状态 --
-    pub show_line_numbers: bool,
-    pub word_wrap: bool,
     pub link_spans: Vec<crate::core::link::UrlSpan>,
+    /// 树形视图节点 (扁平化)
+    pub tree_nodes: Vec<FlatTreeNode>,
+    /// 树节点渲染缓存 (与 tree_nodes 一一对应)
+    pub tree_node_cache: Vec<Option<egui::text::LayoutJob>>,
+    /// 缓存对应的暗色模式状态，用于检测是否需要重建缓存
+    cached_dark_mode: bool,
+    /// 缓存对应的字体大小，用于检测是否需要重建缓存
+    cached_font_size: f32,
+    /// 可见节点索引缓存 (仅在折叠状态变化时重建)
+    pub cached_visible_indices: Vec<usize>,
+    /// 可见索引是否需要重建
+    pub visible_indices_dirty: bool,
+    /// 所有节点中的最大近似字符宽度 (树构建时计算一次)
+    pub max_tree_width_chars: usize,
     /// 短暂的状态反馈消息
     pub status_message: Option<String>,
     /// 消息剩余显示帧数 (约 90 帧 = 1.5 秒 @ 60fps)
@@ -64,16 +76,24 @@ impl AppState {
         #[cfg(feature = "i18n")]
         crate::i18n::set_language(&config.general.language);
 
+        let dark_mode = config.ui.dark_mode;
+        let font_size = config.editor.font_size;
+
         AppState {
             input_text: String::new(),
             output_text: String::new(),
             error_message: None,
-            view_mode: ViewMode::Formatted,
+            view_mode: ViewMode::Tree,
             settings_open: false,
             config,
-            show_line_numbers: true,
-            word_wrap: true,
             link_spans: Vec::new(),
+            tree_nodes: Vec::new(),
+            tree_node_cache: Vec::new(),
+            cached_dark_mode: dark_mode,
+            cached_font_size: font_size,
+            cached_visible_indices: Vec::new(),
+            visible_indices_dirty: true,
+            max_tree_width_chars: 0,
             status_message: None,
             status_message_ttl: 0,
             last_processed_input: String::new(),
@@ -139,10 +159,10 @@ impl AppState {
                 };
             }
             Action::ToggleWordWrap => {
-                self.word_wrap = !self.word_wrap;
+                self.config.editor.word_wrap = !self.config.editor.word_wrap;
             }
             Action::ToggleLineNumbers => {
-                self.show_line_numbers = !self.show_line_numbers;
+                self.config.editor.line_numbers = !self.config.editor.line_numbers;
             }
             Action::ZoomIn => { /* TODO */ }
             Action::ZoomOut => { /* TODO */ }
@@ -159,6 +179,13 @@ impl AppState {
             Action::OpenLink { url } => {
                 crate::core::link::open_url(&url);
             }
+            Action::ToggleTreeNode { index } => {
+                crate::core::json::tree::toggle_node(&mut self.tree_nodes, index);
+                if index < self.tree_node_cache.len() {
+                    self.tree_node_cache[index] = None;
+                }
+                self.visible_indices_dirty = true;
+            }
         }
     }
 
@@ -170,6 +197,11 @@ impl AppState {
             self.error_message = None;
             self.output_text.clear();
             self.link_spans.clear();
+            self.tree_nodes.clear();
+            self.tree_node_cache.clear();
+            self.cached_visible_indices.clear();
+            self.visible_indices_dirty = true;
+            self.max_tree_width_chars = 0;
             return;
         }
 
@@ -186,6 +218,11 @@ impl AppState {
                 } else {
                     json::format_pretty(&value, &opts)
                 };
+                // 构建树形视图节点并重建缓存
+                self.tree_nodes = json::build_flat_tree(&value, self.config.format.tree_expand_depth);
+                self.tree_node_cache = vec![None; self.tree_nodes.len()];
+                self.visible_indices_dirty = true;
+                self.max_tree_width_chars = compute_max_width_chars(&self.tree_nodes);
                 // 提取输出中的链接
                 self.link_spans = crate::core::link::extract_urls(&self.output_text);
             }
@@ -193,6 +230,11 @@ impl AppState {
                 self.error_message = Some(e.to_string());
                 self.output_text.clear();
                 self.link_spans.clear();
+                self.tree_nodes.clear();
+                self.tree_node_cache.clear();
+                self.cached_visible_indices.clear();
+                self.visible_indices_dirty = true;
+                self.max_tree_width_chars = 0;
             }
         }
     }
@@ -209,6 +251,20 @@ impl AppState {
             // 格式化由 update() 中的自动检测完成
         }
     }
+}
+
+/// 计算所有树节点中的最大近似字符宽度 (仅树结构变化时执行一次)。
+fn compute_max_width_chars(nodes: &[FlatTreeNode]) -> usize {
+    nodes
+        .iter()
+        .map(|n| {
+            n.depth * 2
+                + n.key.as_ref().map_or(0, |k| k.len())
+                + 4
+                + n.value.len()
+        })
+        .max()
+        .unwrap_or(0)
 }
 
 impl eframe::App for AppState {
@@ -228,7 +284,8 @@ impl eframe::App for AppState {
         }
 
         // -- 输入变更时自动格式化 (超大文件跳过，需手动点击格式化) --
-        if self.input_text != self.last_processed_input {
+        // 仅比较长度以检测变更，避免每帧对超大文本做逐字节全量比较
+        if self.input_text.len() != self.last_processed_input.len() {
             self.last_processed_input = self.input_text.clone();
             // 超过 1 MB 的输入跳过自动格式化以保持流畅
             if self.input_text.len() <= 1_000_000 {
@@ -242,6 +299,15 @@ impl eframe::App for AppState {
             if self.status_message_ttl == 0 {
                 self.status_message = None;
             }
+        }
+
+        // 暗色模式或字体大小切换时重建树节点缓存
+        if self.cached_dark_mode != self.config.ui.dark_mode
+            || (self.cached_font_size - self.config.editor.font_size).abs() > f32::EPSILON
+        {
+            self.tree_node_cache = vec![None; self.tree_nodes.len()];
+            self.cached_dark_mode = self.config.ui.dark_mode;
+            self.cached_font_size = self.config.editor.font_size;
         }
     }
 }

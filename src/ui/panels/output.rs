@@ -6,7 +6,7 @@
 
 use egui::{Color32, FontId, Key, Label, ScrollArea, Ui};
 use crate::app::action::Action;
-use crate::app::state::AppState;
+use crate::app::state::{AppState, ViewMode};
 use crate::app::theme;
 use crate::i18n;
 
@@ -21,6 +21,12 @@ pub fn render(app: &mut AppState, ui: &mut Ui) {
     // 双击输出区域自动复制全部
     if pointer_in_panel && ui.input(|i| i.pointer.button_double_clicked(egui::PointerButton::Primary)) {
         app.dispatch(Action::CopyOutput);
+    }
+
+    // 树形视图模式
+    if app.view_mode == ViewMode::Tree {
+        crate::ui::panels::tree::render(app, ui);
+        return;
     }
 
     // 标题行 + 内联复制按钮
@@ -72,7 +78,7 @@ pub fn render(app: &mut AppState, ui: &mut Ui) {
         return;
     }
 
-    let font_id = FontId::monospace(theme::FONT_SIZE_MONO);
+    let font_id = FontId::monospace(app.config.editor.font_size);
     let colors = if app.config.ui.dark_mode {
         theme::SyntaxColors::dark()
     } else {

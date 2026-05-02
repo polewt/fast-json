@@ -48,5 +48,5 @@ pub mod platform;
 pub mod util;
 
 // -- 常用类型重导出 --
-pub use core::json::types::{FormatOptions, JsonNode, ParseError};
+pub use core::json::types::{FlatTreeNode, FormatOptions, JsonNodeKind, ParseError};
 pub use core::json::{parse, format_compact, format_pretty, validate};

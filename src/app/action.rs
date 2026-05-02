@@ -55,4 +55,8 @@ pub enum Action {
 
     // -- 链接 --
     OpenLink { url: String },
+
+    // -- 树形视图 --
+    /// 切换树节点的展开/折叠状态
+    ToggleTreeNode { index: usize },
 }
