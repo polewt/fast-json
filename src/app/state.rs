@@ -38,14 +38,33 @@ pub enum ViewMode {
 }
 
 impl AppState {
-    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        let config = AppConfig::load();
+
+        // 注册中文字体到 egui (解决乱码)
+        if let Some(cjk_data) = crate::core::font::load_cjk_font() {
+            let mut fonts = egui::FontDefinitions::default();
+            fonts
+                .font_data
+                .insert("cjk".to_owned(), egui::FontData::from_owned(cjk_data).into());
+            // 将 CJK 字体插入到所有字族的最前面
+            for family in fonts.families.values_mut() {
+                family.push("cjk".to_owned());
+            }
+            cc.egui_ctx.set_fonts(fonts);
+        }
+
+        // 启动时根据配置设置语言
+        #[cfg(feature = "i18n")]
+        crate::i18n::set_language(&config.general.language);
+
         AppState {
             input_text: String::new(),
             output_text: String::new(),
             error_message: None,
             view_mode: ViewMode::Formatted,
             settings_open: false,
-            config: AppConfig::load(),
+            config,
             show_line_numbers: true,
             word_wrap: true,
             link_spans: Vec::new(),
@@ -120,6 +139,12 @@ impl AppState {
             Action::Quit => { /* handled by eframe */ }
             Action::MinimizeToTray => { /* TODO: platform tray */ }
             Action::ShowFromTray => { /* TODO: platform tray */ }
+            Action::SwitchLanguage { lang } => {
+                self.config.general.language = lang.clone();
+                #[cfg(feature = "i18n")]
+                crate::i18n::set_language(&lang);
+                let _ = self.config.save();
+            }
             Action::OpenLink { url } => {
                 crate::core::link::open_url(&url);
             }

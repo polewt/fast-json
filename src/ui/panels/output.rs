@@ -3,9 +3,10 @@
 use egui::{Color32, FontId, ScrollArea, TextEdit, TextFormat, TextStyle, Ui};
 use crate::app::state::AppState;
 use crate::app::theme;
+use crate::i18n;
 
 pub fn render(app: &AppState, ui: &mut Ui) {
-    ui.heading("Output");
+    ui.heading(i18n::tr("panel.output"));
     ui.separator();
 
     // 错误信息
@@ -34,7 +35,7 @@ pub fn render(app: &AppState, ui: &mut Ui) {
                     .font(TextStyle::Monospace)
                     .desired_width(f32::INFINITY)
                     .desired_rows(20)
-                    .hint_text("Formatted JSON will appear here...")
+                    .hint_text(i18n::tr("panel.output_hint"))
                     .interactive(false)
                     .layouter(&mut layouter),
             );

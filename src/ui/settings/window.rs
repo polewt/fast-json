@@ -1,59 +1,93 @@
 //! 设置窗口。
+//!
+//! 以 egui Window 形式弹出，支持运行时语言切换。
 
 use egui::{Context, Window};
+use crate::app::action::Action;
 use crate::app::state::AppState;
+use crate::i18n;
 
 pub fn render(app: &mut AppState, ctx: &Context) {
     let mut open = app.settings_open;
     let mut show = true;
 
-    Window::new("Settings")
+    Window::new(i18n::tr("settings.title"))
         .open(&mut open)
         .resizable(true)
         .default_width(480.0)
-        .default_height(400.0)
+        .default_height(450.0)
         .show(ctx, |ui| {
-            // -- General --
-            ui.heading("General");
-            ui.checkbox(&mut app.config.general.auto_paste_on_start, "Auto-paste on startup");
-            ui.checkbox(&mut app.config.general.background_hotkey, "Enable global hotkey");
-            ui.checkbox(&mut app.config.general.close_to_tray, "Close to system tray");
+            // -- 通用 --
+            ui.heading(i18n::tr("settings.general"));
+
+            // 语言选择
+            ui.horizontal(|ui| {
+                ui.label(format!("{}:", i18n::tr("settings.language")));
+                let current_lang = i18n::current_language();
+                let mut selected = 0usize;
+                if current_lang == "zh-CN" { selected = 1; }
+                if current_lang == "ru" { selected = 2; }
+
+                let selected_text = match selected {
+                    1 => "简体中文",
+                    2 => "Русский",
+                    _ => "English",
+                };
+
+                egui::ComboBox::from_id_salt("language_selector")
+                    .selected_text(selected_text)
+                    .show_ui(ui, |ui| {
+                        if ui.selectable_value(&mut selected, 0, "English").clicked() {
+                            app.dispatch(Action::SwitchLanguage { lang: "en".into() });
+                        }
+                        if ui.selectable_value(&mut selected, 1, "简体中文").clicked() {
+                            app.dispatch(Action::SwitchLanguage { lang: "zh-CN".into() });
+                        }
+                        if ui.selectable_value(&mut selected, 2, "Русский").clicked() {
+                            app.dispatch(Action::SwitchLanguage { lang: "ru".into() });
+                        }
+                    });
+            });
+
+            ui.checkbox(&mut app.config.general.auto_paste_on_start, i18n::tr("settings.auto_paste"));
+            ui.checkbox(&mut app.config.general.background_hotkey, i18n::tr("settings.background_hotkey"));
+            ui.checkbox(&mut app.config.general.close_to_tray, i18n::tr("settings.close_to_tray"));
 
             ui.separator();
 
-            // -- Editor --
-            ui.heading("Editor");
-            ui.add(egui::Slider::new(&mut app.config.editor.font_size, 10.0..=28.0).text("Font Size"));
-            ui.checkbox(&mut app.config.editor.word_wrap, "Word Wrap");
-            ui.checkbox(&mut app.config.editor.line_numbers, "Line Numbers");
-            ui.checkbox(&mut app.config.editor.syntax_highlight, "Syntax Highlight");
+            // -- 编辑器 --
+            ui.heading(i18n::tr("settings.editor"));
+            ui.add(egui::Slider::new(&mut app.config.editor.font_size, 10.0..=28.0).text(i18n::tr("settings.font_size")));
+            ui.checkbox(&mut app.config.editor.word_wrap, i18n::tr("settings.word_wrap"));
+            ui.checkbox(&mut app.config.editor.line_numbers, i18n::tr("settings.line_numbers"));
+            ui.checkbox(&mut app.config.editor.syntax_highlight, i18n::tr("settings.syntax_highlight"));
 
             ui.separator();
 
-            // -- Format --
-            ui.heading("Format");
-            ui.add(egui::Slider::new(&mut app.config.format.indent, 0..=8).text("Indent"));
-            ui.checkbox(&mut app.config.format.sort_keys, "Sort Keys");
-            ui.checkbox(&mut app.config.format.trailing_comma, "Trailing Commas");
+            // -- 格式化 --
+            ui.heading(i18n::tr("settings.format"));
+            ui.add(egui::Slider::new(&mut app.config.format.indent, 0..=8).text(i18n::tr("settings.indent")));
+            ui.checkbox(&mut app.config.format.sort_keys, i18n::tr("settings.sort_keys"));
+            ui.checkbox(&mut app.config.format.trailing_comma, i18n::tr("settings.trailing_comma"));
 
             ui.separator();
 
-            // -- Appearance --
-            ui.heading("Appearance");
+            // -- 外观 --
+            ui.heading(i18n::tr("settings.appearance"));
             let mut dark = app.config.ui.dark_mode;
-            if ui.checkbox(&mut dark, "Dark Mode").changed() {
+            if ui.checkbox(&mut dark, i18n::tr("settings.dark_mode")).changed() {
                 app.config.ui.dark_mode = dark;
             }
 
             ui.separator();
 
-            // -- Buttons --
+            // -- 操作按钮 --
             ui.horizontal(|ui| {
-                if ui.button("Save & Close").clicked() {
+                if ui.button(i18n::tr("settings.save_close")).clicked() {
                     let _ = app.config.save();
                     show = false;
                 }
-                if ui.button("Reset Defaults").clicked() {
+                if ui.button(i18n::tr("settings.reset")).clicked() {
                     app.config = crate::core::config::AppConfig::default();
                     let _ = app.config.save();
                 }

@@ -3,9 +3,10 @@
 use egui::{Color32, FontId, ScrollArea, TextEdit, TextFormat, TextStyle, Ui};
 use crate::app::state::AppState;
 use crate::app::theme;
+use crate::i18n;
 
 pub fn render(app: &mut AppState, ui: &mut Ui) {
-    ui.heading("Input");
+    ui.heading(i18n::tr("panel.input"));
     ui.separator();
 
     ScrollArea::vertical()
@@ -18,8 +19,6 @@ pub fn render(app: &mut AppState, ui: &mut Ui) {
                 let mut job = egui::text::LayoutJob::default();
 
                 if app.config.editor.syntax_highlight {
-                    // TODO: 完整的 JSON 语法高亮
-                    // 当前先做简单的 key/string/value 着色
                     highlight_json_syntax(&mut job, string, &highlight, font_id.clone());
                 } else {
                     job.append(string, 0.0, TextFormat::simple(font_id, Color32::LIGHT_GRAY));
@@ -33,7 +32,7 @@ pub fn render(app: &mut AppState, ui: &mut Ui) {
                     .font(TextStyle::Monospace)
                     .desired_width(f32::INFINITY)
                     .desired_rows(20)
-                    .hint_text("Paste JSON here...")
+                    .hint_text(i18n::tr("panel.input_hint"))
                     .layouter(&mut layouter),
             );
         });
@@ -46,7 +45,6 @@ fn highlight_json_syntax(
     colors: &theme::SyntaxColors,
     font_id: FontId,
 ) {
-    // 简单状态机：在字符串/数字/布尔/null 之间切换颜色
     let mut i = 0;
     let bytes = text.as_bytes();
 
@@ -54,7 +52,6 @@ fn highlight_json_syntax(
         let ch = bytes[i] as char;
 
         if ch == '"' {
-            // 字符串
             let start = i;
             i += 1;
             while i < bytes.len() {
@@ -64,7 +61,6 @@ fn highlight_json_syntax(
                 }
                 i += 1;
             }
-            // 判断是 key 还是 value：如果后面紧跟 ':'
             let end = i;
             let is_key = bytes[end..]
                 .iter()

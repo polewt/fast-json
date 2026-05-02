@@ -50,6 +50,9 @@ pub enum Action {
     MinimizeToTray,
     ShowFromTray,
 
+    // -- 国际化 --
+    SwitchLanguage { lang: String },
+
     // -- 链接 --
     OpenLink { url: String },
 }

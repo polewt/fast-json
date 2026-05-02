@@ -1,3 +1,6 @@
+// 隐藏 Windows 控制台窗口 (GUI 应用)
+#![windows_subsystem = "windows"]
+
 //! Fast JSON - 二进制入口点。
 //!
 //! 此二进制文件刻意保持精简：所有逻辑都位于 `fast_json` 库中。

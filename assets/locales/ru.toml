@@ -1,0 +1,59 @@
+[app]
+title = "Fast JSON - Форматтер & Просмотрщик"
+
+[toolbar]
+format = "Форматировать"
+compact = "Сжать"
+validate = "Проверить"
+paste = "Вставить"
+copy = "Копировать"
+clear = "Очистить"
+open = "Открыть"
+settings = "Настройки"
+indent = "Отступ"
+spaces = "пробелов"
+
+[panel]
+input = "Ввод"
+output = "Вывод"
+input_hint = "Вставьте JSON сюда..."
+output_hint = "Отформатированный JSON появится здесь..."
+
+[status]
+chars = "Символов"
+lines = "Строк"
+bytes = "Байт"
+valid = "[OK] Корректный JSON"
+invalid = "[X] Некорректный JSON"
+encoding = "Кодировка"
+indent_info = "Отступ: {} пробелов | Тема: {}"
+theme_dark = "Тёмная"
+theme_light = "Светлая"
+
+[settings]
+title = "Настройки"
+general = "Общие"
+editor = "Редактор"
+format = "Формат"
+shortcuts = "Горячие клавиши"
+language = "Язык"
+save_close = "Сохранить и закрыть"
+reset = "Сбросить по умолчанию"
+auto_paste = "Автовставка при запуске"
+background_hotkey = "Включить глобальные клавиши"
+close_to_tray = "Сворачивать в трей"
+font_size = "Размер шрифта"
+word_wrap = "Перенос строк"
+line_numbers = "Номера строк"
+syntax_highlight = "Подсветка синтаксиса"
+indent = "Отступ"
+sort_keys = "Сортировка ключей"
+trailing_comma = "Завершающие запятые"
+appearance = "Оформление"
+dark_mode = "Тёмная тема"
+
+[common]
+about = "О Fast JSON"
+quit = "Выход"
+ok = "OK"
+cancel = "Отмена"

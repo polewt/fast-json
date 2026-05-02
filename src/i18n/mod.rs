@@ -12,6 +12,4 @@
 pub mod keys;
 pub mod loader;
 
-pub use loader::tr;
-pub use loader::set_language;
-pub use loader::current_language;
+pub use loader::{current_language, set_language, tr};
