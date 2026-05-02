@@ -33,19 +33,43 @@ pub struct SyntaxColors {
     pub boolean: Color32,
     pub null: Color32,
     pub bracket: Color32,
+    pub colon: Color32,
+    pub comma: Color32,
+    pub plain: Color32,
+    pub url: Color32,
     pub error: Color32,
 }
 
 impl SyntaxColors {
     pub fn dark() -> Self {
         SyntaxColors {
-            key: Color32::from_rgb(137, 221, 255),
-            string: Color32::from_rgb(195, 232, 141),
-            number: Color32::from_rgb(247, 140, 108),
-            boolean: Color32::from_rgb(255, 203, 107),
-            null: Color32::from_rgb(137, 221, 255),
-            bracket: Color32::from_rgb(158, 158, 158),
-            error: Color32::from_rgb(255, 83, 112),
+            key: Color32::from_rgb(137, 221, 255),   // 浅蓝
+            string: Color32::from_rgb(195, 232, 141), // 浅绿
+            number: Color32::from_rgb(247, 140, 108), // 橙色
+            boolean: Color32::from_rgb(255, 203, 107), // 琥珀
+            null: Color32::from_rgb(137, 221, 255),   // 浅蓝 (同 key)
+            bracket: Color32::from_rgb(212, 212, 212), // 浅灰
+            colon: Color32::from_rgb(128, 128, 128),   // 中灰
+            comma: Color32::from_rgb(128, 128, 128),   // 中灰
+            plain: Color32::from_rgb(200, 200, 200),   // 普通文本
+            url: Color32::from_rgb(86, 156, 214),      // 链接蓝
+            error: Color32::from_rgb(255, 83, 112),    // 红色
+        }
+    }
+
+    pub fn light() -> Self {
+        SyntaxColors {
+            key: Color32::from_rgb(4, 81, 140),        // 深蓝
+            string: Color32::from_rgb(10, 101, 35),     // 深绿
+            number: Color32::from_rgb(175, 56, 0),      // 深橙
+            boolean: Color32::from_rgb(190, 130, 0),    // 深琥珀
+            null: Color32::from_rgb(4, 81, 140),        // 深蓝 (同 key)
+            bracket: Color32::from_rgb(60, 60, 60),     // 深灰
+            colon: Color32::from_rgb(128, 128, 128),    // 中灰
+            comma: Color32::from_rgb(128, 128, 128),    // 中灰
+            plain: Color32::from_rgb(45, 45, 45),       // 普通文本
+            url: Color32::from_rgb(0, 80, 160),         // 链接蓝
+            error: Color32::from_rgb(200, 30, 50),      // 红色
         }
     }
 }

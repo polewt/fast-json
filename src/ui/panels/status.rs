@@ -1,10 +1,12 @@
 //! 底部状态栏 - 字符数、行数、编码等信息。
+//!
+//! 同时展示短暂的状态反馈消息（如"已复制到剪贴板"），显示一帧后自动消失。
 
 use egui::Ui;
 use crate::app::state::AppState;
 use crate::i18n;
 
-pub fn render(app: &AppState, ui: &mut Ui) {
+pub fn render(app: &mut AppState, ui: &mut Ui) {
     ui.horizontal(|ui| {
         let char_count = app.input_text.chars().count();
         let line_count = app.input_text.lines().count();
@@ -18,6 +20,14 @@ pub fn render(app: &AppState, ui: &mut Ui) {
         ));
 
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            // 状态反馈消息 (持续约 1.5 秒后自动消失)
+            if let Some(msg) = &app.status_message {
+                ui.colored_label(
+                    egui::Color32::GREEN,
+                    egui::RichText::new(msg.clone()).strong(),
+                );
+            }
+
             let encoding_label = if app.input_text.is_empty() || app.input_text.is_ascii() {
                 "UTF-8"
             } else {

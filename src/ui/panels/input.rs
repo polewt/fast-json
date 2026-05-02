@@ -1,101 +1,73 @@
 //! 左侧输入面板 - 原始 JSON 文本编辑器。
+//!
+//! 尺寸由布局层的 SidePanel 锁定。使用双层 ScrollArea
+//! (外层水平 + 内层垂直)，长行不换行时自动出现横向滚动条。
 
-use egui::{Color32, FontId, ScrollArea, TextEdit, TextFormat, TextStyle, Ui};
+use egui::{Color32, FontId, ScrollArea, TextEdit, TextStyle, Ui};
 use crate::app::state::AppState;
 use crate::app::theme;
 use crate::i18n;
 
 pub fn render(app: &mut AppState, ui: &mut Ui) {
-    ui.heading(i18n::tr("panel.input"));
-    ui.separator();
+    let available = ui.available_size();
 
-    ScrollArea::vertical()
-        .auto_shrink([false; 2])
+    ui.label(egui::RichText::new(i18n::tr("panel.input")).strong());
+    ui.add_space(2.0);
+
+    let edit_h = (available.y - 22.0).max(40.0);
+    // 记录面板宽度，在 ScrollArea 内层 available_width 会被撑到无限大
+    let panel_w = available.x;
+
+    // 外层水平滚动 + 内层垂直滚动，长行不挤压布局
+    ScrollArea::horizontal()
+        .auto_shrink([false, false])
         .show(ui, |ui| {
-            let mut layouter = |ui: &egui::Ui, string: &str, _wrap_width: f32| {
-                let font_id = FontId::monospace(theme::FONT_SIZE_MONO);
-                let highlight = theme::SyntaxColors::dark();
+            ScrollArea::vertical()
+                .auto_shrink([false, false])
+                .max_height(edit_h)
+                .show(ui, |ui| {
+                    ui.set_min_width(panel_w);
 
-                let mut job = egui::text::LayoutJob::default();
+                    let mut layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
+                        let font_id = FontId::monospace(theme::FONT_SIZE_MONO);
+                        let highlight_colors = if app.config.ui.dark_mode {
+                            theme::SyntaxColors::dark()
+                        } else {
+                            theme::SyntaxColors::light()
+                        };
 
-                if app.config.editor.syntax_highlight {
-                    highlight_json_syntax(&mut job, string, &highlight, font_id.clone());
-                } else {
-                    job.append(string, 0.0, TextFormat::simple(font_id, Color32::LIGHT_GRAY));
-                }
+                        let mut job = egui::text::LayoutJob::default();
+                        // 根据自动换行设置决定是否限制行宽
+                        if app.config.editor.word_wrap {
+                            job.wrap.max_width = wrap_width;
+                        } else {
+                            job.wrap.max_width = f32::INFINITY;
+                        }
 
-                ui.fonts(|f| f.layout_job(job))
-            };
+                        if app.config.editor.syntax_highlight {
+                            crate::ui::highlight::highlight_json(
+                                &mut job, string, &highlight_colors, font_id, &[],
+                            );
+                        } else {
+                            let color = if app.config.ui.dark_mode {
+                                Color32::LIGHT_GRAY
+                            } else {
+                                Color32::DARK_GRAY
+                            };
+                            job.append(string, 0.0, egui::TextFormat::simple(font_id, color));
+                        }
 
-            ui.add(
-                TextEdit::multiline(&mut app.input_text)
-                    .font(TextStyle::Monospace)
-                    .desired_width(f32::INFINITY)
-                    .desired_rows(20)
-                    .hint_text(i18n::tr("panel.input_hint"))
-                    .layouter(&mut layouter),
-            );
+                        ui.fonts(|f| f.layout_job(job))
+                    };
+
+                    ui.add(
+                        TextEdit::multiline(&mut app.input_text)
+                            .font(TextStyle::Monospace)
+                            .desired_width(panel_w)
+                            .desired_rows(5)
+                            .hint_text(i18n::tr("panel.input_hint"))
+                            .layouter(&mut layouter),
+                    );
+                });
         });
-}
-
-/// 简易 JSON 语法高亮 (后续可用 syntect 替代)。
-fn highlight_json_syntax(
-    job: &mut egui::text::LayoutJob,
-    text: &str,
-    colors: &theme::SyntaxColors,
-    font_id: FontId,
-) {
-    let mut i = 0;
-    let bytes = text.as_bytes();
-
-    while i < bytes.len() {
-        let ch = bytes[i] as char;
-
-        if ch == '"' {
-            let start = i;
-            i += 1;
-            while i < bytes.len() {
-                if bytes[i] == b'"' && bytes[i - 1] != b'\\' {
-                    i += 1;
-                    break;
-                }
-                i += 1;
-            }
-            let end = i;
-            let is_key = bytes[end..]
-                .iter()
-                .take_while(|b| b.is_ascii_whitespace())
-                .copied()
-                .chain(std::iter::once(b' '))
-                .find(|&b| !b.is_ascii_whitespace())
-                == Some(b':');
-
-            let color = if is_key { colors.key } else { colors.string };
-            job.append(&text[start..end], 0.0, TextFormat::simple(font_id.clone(), color));
-        } else if ch == '{' || ch == '}' || ch == '[' || ch == ']' {
-            job.append(&text[i..i + 1], 0.0, TextFormat::simple(font_id.clone(), colors.bracket));
-            i += 1;
-        } else if ch == 't' && text[i..].starts_with("true") {
-            job.append("true", 0.0, TextFormat::simple(font_id.clone(), colors.boolean));
-            i += 4;
-        } else if ch == 'f' && text[i..].starts_with("false") {
-            job.append("false", 0.0, TextFormat::simple(font_id.clone(), colors.boolean));
-            i += 5;
-        } else if ch == 'n' && text[i..].starts_with("null") {
-            job.append("null", 0.0, TextFormat::simple(font_id.clone(), colors.null));
-            i += 4;
-        } else if ch.is_ascii_digit() || ch == '-' {
-            let start = i;
-            while i < bytes.len()
-                && (bytes[i] as char).is_ascii_digit() || bytes[i] == b'.' || bytes[i] == b'-'
-                    || bytes[i] == b'e' || bytes[i] == b'E' || bytes[i] == b'+'
-            {
-                i += 1;
-            }
-            job.append(&text[start..i], 0.0, TextFormat::simple(font_id.clone(), colors.number));
-        } else {
-            job.append(&text[i..i + 1], 0.0, TextFormat::simple(font_id.clone(), Color32::LIGHT_GRAY));
-            i += 1;
-        }
-    }
 }

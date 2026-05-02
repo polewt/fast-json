@@ -54,6 +54,7 @@ dark_mode = "暗色模式"
 
 [common]
 about = "关于 Fast JSON"
+copy_ok = "已复制到剪贴板"
 quit = "退出"
 ok = "确定"
 cancel = "取消"

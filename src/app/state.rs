@@ -9,6 +9,7 @@ use crate::core::json;
 use crate::core::json::types::FormatOptions;
 use crate::app::action::Action;
 use crate::core::clipboard::ClipboardProvider;
+use crate::i18n;
 
 /// 全局应用状态。
 pub struct AppState {
@@ -28,6 +29,11 @@ pub struct AppState {
     pub show_line_numbers: bool,
     pub word_wrap: bool,
     pub link_spans: Vec<crate::core::link::UrlSpan>,
+    /// 短暂的状态反馈消息
+    pub status_message: Option<String>,
+    /// 消息剩余显示帧数 (约 90 帧 = 1.5 秒 @ 60fps)
+    status_message_ttl: u32,
+    last_processed_input: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -47,9 +53,9 @@ impl AppState {
             fonts
                 .font_data
                 .insert("cjk".to_owned(), egui::FontData::from_owned(cjk_data).into());
-            // 将 CJK 字体插入到所有字族的最前面
+            // 将 CJK 字体设为默认主字体
             for family in fonts.families.values_mut() {
-                family.push("cjk".to_owned());
+                family.insert(0, "cjk".to_owned());
             }
             cc.egui_ctx.set_fonts(fonts);
         }
@@ -68,6 +74,9 @@ impl AppState {
             show_line_numbers: true,
             word_wrap: true,
             link_spans: Vec::new(),
+            status_message: None,
+            status_message_ttl: 0,
+            last_processed_input: String::new(),
         }
     }
 
@@ -95,6 +104,8 @@ impl AppState {
             }
             Action::CopyOutput => {
                 self.copy_to_clipboard(&self.output_text.clone());
+                self.status_message = Some(i18n::tr("common.copy_ok"));
+                self.status_message_ttl = 90;
             }
             Action::CopyInput => {
                 self.copy_to_clipboard(&self.input_text.clone());
@@ -154,6 +165,14 @@ impl AppState {
     // -- 内部方法 --
 
     fn process_json(&mut self) {
+        // 空输入视为初始状态，不显示错误
+        if self.input_text.trim().is_empty() {
+            self.error_message = None;
+            self.output_text.clear();
+            self.link_spans.clear();
+            return;
+        }
+
         match json::parse(&self.input_text) {
             Ok(value) => {
                 self.error_message = None;
@@ -187,7 +206,7 @@ impl AppState {
         #[cfg(feature = "platform-clipboard")]
         if let Some(text) = crate::core::clipboard::default_provider().read() {
             self.input_text = text;
-            self.process_json();
+            // 格式化由 update() 中的自动检测完成
         }
     }
 }
@@ -206,6 +225,23 @@ impl eframe::App for AppState {
         // -- 设置窗口 --
         if self.settings_open {
             crate::ui::settings::window::render(self, ctx);
+        }
+
+        // -- 输入变更时自动格式化 (超大文件跳过，需手动点击格式化) --
+        if self.input_text != self.last_processed_input {
+            self.last_processed_input = self.input_text.clone();
+            // 超过 1 MB 的输入跳过自动格式化以保持流畅
+            if self.input_text.len() <= 1_000_000 {
+                self.process_json();
+            }
+        }
+
+        // 状态消息 TTL 倒计时
+        if self.status_message_ttl > 0 {
+            self.status_message_ttl -= 1;
+            if self.status_message_ttl == 0 {
+                self.status_message = None;
+            }
         }
     }
 }

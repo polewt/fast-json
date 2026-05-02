@@ -9,6 +9,7 @@
 //! - `widgets/*`- 可复用的 UI 组件
 //! - `settings/*`- 设置界面
 
+pub mod highlight;
 pub mod layout;
 pub mod panels;
 pub mod widgets;

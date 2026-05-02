@@ -54,6 +54,7 @@ dark_mode = "Тёмная тема"
 
 [common]
 about = "О Fast JSON"
+copy_ok = "Скопировано в буфер обмена"
 quit = "Выход"
 ok = "OK"
 cancel = "Отмена"

@@ -54,6 +54,7 @@ dark_mode = "Dark Mode"
 
 [common]
 about = "About Fast JSON"
+copy_ok = "Copied to clipboard"
 quit = "Quit"
 ok = "OK"
 cancel = "Cancel"

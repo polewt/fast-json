@@ -2,6 +2,7 @@
 //!
 //! 将 JSON Value 格式化为缩进美观或紧凑的字符串。
 
+use serde::Serialize;
 use serde_json::Value;
 use crate::core::json::types::FormatOptions;
 
@@ -24,7 +25,14 @@ fn format_with_indent(value: &Value, indent: usize) -> String {
     if indent == 0 {
         return format_compact(value);
     }
-    serde_json::to_string_pretty(value).unwrap_or_default()
+    let indent_bytes = b" ".repeat(indent);
+    let mut buf = Vec::new();
+    let formatter = serde_json::ser::PrettyFormatter::with_indent(&indent_bytes);
+    let mut ser = serde_json::Serializer::with_formatter(&mut buf, formatter);
+    if value.serialize(&mut ser).is_err() {
+        return String::new();
+    }
+    String::from_utf8(buf).unwrap_or_default()
 }
 
 /// 递归对 object 的 key 排序 (深度优先)。
