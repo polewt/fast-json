@@ -1,0 +1,41 @@
+[app]
+title = "Fast JSON - 格式化 & 查看器"
+
+[toolbar]
+format = "格式化"
+compact = "压缩"
+validate = "校验"
+paste = "粘贴"
+copy = "复制"
+clear = "清空"
+open = "打开"
+settings = "设置"
+indent = "缩进"
+
+[panel]
+input = "输入"
+output = "输出"
+input_hint = "在此粘贴 JSON..."
+output_hint = "格式化后的 JSON 将显示在此..."
+
+[status]
+chars = "字符"
+lines = "行"
+bytes = "字节"
+valid = "[OK] 合法 JSON"
+invalid = "[X] JSON 无效"
+
+[settings]
+title = "设置"
+general = "通用"
+editor = "编辑器"
+format = "格式化"
+shortcuts = "快捷键"
+save_close = "保存并关闭"
+reset = "恢复默认"
+
+[common]
+about = "关于 Fast JSON"
+quit = "退出"
+ok = "确定"
+cancel = "取消"

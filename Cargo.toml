@@ -1,0 +1,70 @@
+[package]
+name = "fast-json"
+version = "0.0.1"
+edition = "2026"
+authors = ["polewt <polewt@163.com>"]
+description = "一个快速、跨平台的 JSON 格式化 GUI 工具"
+repository = "https://github.com/polewt/fast-json"
+license = "MIT"
+
+[lib]
+name = "fast_json"
+path = "src/lib.rs"
+
+[[bin]]
+name = "fast-json"
+path = "src/main.rs"
+
+# -- 核心依赖 (always required) --
+[dependencies]
+sonic-rs = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+directories = "6"
+log = "0.4"
+thiserror = "2"
+
+# -- GUI (optional) --
+eframe = { version = "0.31", optional = true }
+egui = { version = "0.31", optional = true }
+egui_extras = { version = "0.31", features = ["syntect"], optional = true }
+
+# -- Platform features (optional) --
+arboard = { version = "3", optional = true }
+rfd = { version = "0.15", optional = true }
+tray-icon = { version = "0.19", optional = true }
+global-hotkey = { version = "0.6", optional = true }
+open = { version = "5", optional = true }
+
+# -- i18n (optional) --
+rust-i18n = { version = "3", optional = true }
+
+# -- Logging --
+env_logger = "0.11"
+
+[features]
+default = ["gui-full"]
+gui-full = ["gui", "platform-full", "i18n"]
+gui = ["eframe", "egui", "egui_extras"]
+cli = []
+platform-full = [
+    "platform-clipboard",
+    "platform-file",
+    "platform-tray",
+    "platform-hotkey",
+    "platform-link",
+]
+platform-clipboard = ["arboard"]
+platform-file = ["rfd"]
+platform-tray = ["tray-icon"]
+platform-hotkey = ["global-hotkey"]
+platform-link = ["open"]
+i18n = ["rust-i18n"]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

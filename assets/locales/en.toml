@@ -1,0 +1,41 @@
+[app]
+title = "Fast JSON - Formatter & Viewer"
+
+[toolbar]
+format = "Format"
+compact = "Compact"
+validate = "Validate"
+paste = "Paste"
+copy = "Copy"
+clear = "Clear"
+open = "Open"
+settings = "Settings"
+indent = "Indent"
+
+[panel]
+input = "Input"
+output = "Output"
+input_hint = "Paste JSON here..."
+output_hint = "Formatted JSON will appear here..."
+
+[status]
+chars = "Chars"
+lines = "Lines"
+bytes = "Bytes"
+valid = "[OK] Valid JSON"
+invalid = "[X] Invalid JSON"
+
+[settings]
+title = "Settings"
+general = "General"
+editor = "Editor"
+format = "Format"
+shortcuts = "Shortcuts"
+save_close = "Save & Close"
+reset = "Reset Defaults"
+
+[common]
+about = "About Fast JSON"
+quit = "Quit"
+ok = "OK"
+cancel = "Cancel"

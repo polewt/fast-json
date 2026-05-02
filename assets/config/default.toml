@@ -1,0 +1,31 @@
+# Fast JSON - 默认配置
+
+[general]
+language = "en"
+auto_paste_on_start = true
+background_hotkey = true
+close_to_tray = true
+
+[editor]
+font_size = 14.0
+font_family = "Consolas, monospace"
+tab_spaces = 4
+word_wrap = true
+line_numbers = true
+syntax_highlight = true
+
+[format]
+indent = 2
+sort_keys = false
+trailing_comma = false
+
+[shortcuts]
+format = "Ctrl+F"
+compact = "Ctrl+Shift+F"
+copy = "Ctrl+C"
+clear = "Ctrl+L"
+open_file = "Ctrl+O"
+toggle_settings = "Ctrl+,"
+
+[ui]
+dark_mode = true
